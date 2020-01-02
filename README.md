@@ -1,5 +1,5 @@
 # Reborn - User / Admin Project template
-
+![logo.png](./logo.png);
 * This repository serves as a template for future projects
 ## Features:
    1. User registration / login
