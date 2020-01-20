@@ -49,7 +49,7 @@ router.get('/me', auth, async (req, res) => {
 
 router.post('/login',
     [
-        check("username", "Username should not be blank").not().isEmpty(),
+        check("email", "email should not be blank").not().isEmpty(),
         check("password", "Password should not be blank").not().isEmpty()
     ],
     async (req, res) => {
@@ -57,12 +57,14 @@ router.post('/login',
         if( !errors.isEmpty() ) {
             return res.status(400).json({ msg: errors.array() });
         }
-        const { username, password } = req.body;
-        const user = await User.findOne({ username });
+        const { email, password } = req.body;
+        const user = await User.findOne({ email });
+        console.log(user);
         if(!user){
-            return res.status(400).json({ msg: `User with username "${username}" not found`});
+            return res.status(400).json({ msg: `User with email "${email}" not found`});
         }
-        const isMatch = bcrypt.compare(password, user.password );
+        const isMatch = await bcrypt.compare(password, user.password );
+        console.log(isMatch);
         if(!isMatch){
             return res.status(400).json({ msg: "Passwords do not match" });
         }
@@ -89,46 +91,55 @@ router.post('/register',
     [
         check("firstName", "First Name is required").not().isEmpty(),
         check("lastName", "Last Name is required").not().isEmpty(),
-        check("username", "Username is required").not().isEmpty(),
+        check("email", "email is required").not().isEmpty(),
         check("password", "Please enter a password w/ 6 or more characters")
             .isLength({ min: 6})
     ], 
     async (req, res) => {
-        const errors = validationResult(req);
-        if( !errors.isEmpty() ) {
-            return res.status(400).json({ msg: errors.array() });
-        }
-        const { firstName, lastName, username, password } = req.body;
-        let user = await User.findOne({ username });
-        if(user){
-            return res.status(400).json({ msg: `The username "${username}" is already taken.`});
-        }
-        user = new User({
-            firstName,
-            lastName,
-            username
-        });
-        const salt = await bcrypt.genSalt(10);
-        user.password = await bcrypt.hash(password, salt);
-        await user.save();
-        const payload = {
-            user: {
-                id: user.id
+        try{
+            const errors = validationResult(req);
+            if( !errors.isEmpty() ) {
+                return res.status(400).json({ msg: errors.array() });
             }
-        }
-        jwt.sign( payload, config.get('JWTsecret'),{
-                expiresIn: 3600000
-            }, (err, token) => {
-                if(err) {
-                    console.error(err);
-                    return res.status(500).json({ msg: "Server error. Please contact admin" });
-                }
-                return res.json({ token });
+            const { firstName, lastName, email, password } = req.body;
+            let user = await User.findOne({ email });
+            console.log("!", user)
+            if(user){
+                return res.status(400).json({ msg: `The email "${email}" is already taken.`});
+            }
+            console.log("Creating...")
+            user = new User({
+                firstName,
+                lastName,
+                email
             });
+            const salt = await bcrypt.genSalt(10);
+            user.password = await bcrypt.hash(password, salt);
+            console.log("Saving...")
+            console.log(user)
+            await user.save();
+            const payload = {
+                user: {
+                    id: user.id
+                }
+            }
+            jwt.sign( payload, config.get('JWTsecret'),{
+                    expiresIn: 3600000
+                }, (err, token) => {
+                    if(err) {
+                        console.error(err);
+                        return res.status(500).json({ msg: "Server error. Please contact admin" });
+                    }
+                    return res.json({ token });
+            });
+        } catch(err){
+            console.error(err);
+        }
     }
 )
 
-
+/*
+// verify user
 router.post('/verify/:id', [auth, admin], async (req, res) => {
     console.log(req.params.id);
     const user = await User.findById(req.params.id);
@@ -136,11 +147,11 @@ router.post('/verify/:id', [auth, admin], async (req, res) => {
         return res.status(400).json({ msg: "User not found "});
     }
     if(user.verified){
-        return res.status(400).json({ msg: `User ${user.username} is already verified`});
+        return res.status(400).json({ msg: `User ${user.email} is already verified`});
     }
     user.verified = true;
     await user.save();
-    return res.json({ msg: `User ${user.username} verified!`});
+    return res.json({ msg: `User ${user.email} verified!`});
 })
 
 router.post('/unverify/:id', [auth, admin], async (req, res) => {
@@ -150,13 +161,13 @@ router.post('/unverify/:id', [auth, admin], async (req, res) => {
         return res.status(400).json({ msg: "User not found "});
     }
     if(!user.verified){
-        return res.status(400).json({ msg: `User ${user.username} is not verified`});
+        return res.status(400).json({ msg: `User ${user.email} is not verified`});
     }
     user.verified = false;
     await user.save();
-    return res.json({ msg: `User ${user.username} unverified!`});
+    return res.json({ msg: `User ${user.email} unverified!`});
 })
-
+*/
 // get user's personal  information
 router.get('/:id', auth, async (req, res) => {
     try {
@@ -174,16 +185,16 @@ router.get('/:id', auth, async (req, res) => {
 
 
 router.put('/:id', auth, async (req, res) => {
-    const { firstName, lastName, username, password } = req.body;
+    const { firstName, lastName, email, password } = req.body;
     let userFields = {};
     if(firstname) userFields.firstName = firstName;
     if(lastName) userFields.lastName = lastName;
-    if(username) userFields.username = username;
+    if(email) userFields.email = email;
     if(password) userFields.password = password;
     try {
         let user = await User.find(req.params.id);
         if(!user){
-            return res.status(400).json({ msg: `User ${username} not found`});
+            return res.status(400).json({ msg: `User ${email} not found`});
         }
         if(user._id.toString() !== req.user.id){
             return res.status(403).json({ msg: "Not authorized" });

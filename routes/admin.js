@@ -15,7 +15,7 @@ router.get('/', (req, res) => {
 
 router.post('/login',
     [
-        check("username", "Username is required").not().isEmpty(),
+        check("email", "email is required").not().isEmpty(),
         check("password", "Password field should not be blank").not().isEmpty()
     ],
     async (req, res) => {
@@ -25,10 +25,10 @@ router.post('/login',
             if( !errors.isEmpty() ) {
                 return res.status(400).json({ msg: errors.array() });
             }
-            const { username, password } = req.body;
-            const user = await User.findOne({ username });
+            const { email, password } = req.body;
+            const user = await User.findOne({ email });
             if(!user){
-                return res.status(400).json({ msg: `User with username "${username}" not found`});
+                return res.status(400).json({ msg: `User with email "${email}" not found`});
             }
             const isMatch = bcrypt.compare(password, user.password );
             if(!isMatch){
@@ -63,7 +63,7 @@ router.post('/register',
     [
         check("firstName", "First Name is required").not().isEmpty(),
         check("lastName", "Last Name is required").not().isEmpty(),
-        check("username", "Username is required").not().isEmpty(),
+        check("email", "email is required").not().isEmpty(),
         check("password", "Please enter a password w/ 6 or more characters")
             .isLength({ min: 6})
     ], 
@@ -72,15 +72,15 @@ router.post('/register',
         if( !errors.isEmpty() ) {
             return res.status(400).json({ msg: errors.array() });
         }
-        const { firstName, lastName, username, password } = req.body;
-        let user = await User.findOne({ username });
+        const { firstName, lastName, email, password } = req.body;
+        let user = await User.findOne({ email });
         if(user){
-            return res.status(400).json({ msg: `The username "${username}" is already taken.`});
+            return res.status(400).json({ msg: `The email "${email}" is already taken.`});
         }
         user = new User({
             firstName,
             lastName,
-            username,
+            email,
             isAdmin: true,
             verified: true
         });

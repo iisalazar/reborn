@@ -12,14 +12,10 @@ const UserSchema = mongoose.Schema({
         required: true,
         
     },
-    username: {
+    email: {
         type: String,
         required: true,
         unique: true
-    },
-    password: {
-        type: String,
-        required: true
     },
     dateCreated: {
         type: Date,
@@ -29,6 +25,11 @@ const UserSchema = mongoose.Schema({
         type: Date,
         default: Date.now
     },
+    password: {
+        type: String,
+        required: true
+    }
+    /*
     isAdmin: {
         type: Boolean,
         default: false
@@ -37,6 +38,7 @@ const UserSchema = mongoose.Schema({
         type: Boolean,
         default: false
     }
+    */
 })
 
 UserSchema.plugin(mongoosePaginate);
