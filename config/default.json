@@ -1,4 +1,4 @@
 {
-    "mongodbURI": "mongodb://127.0.0.1:27017",
+    "mongodbURI": "mongodb+srv://iisalazar:greyfordtoor@cluster0-cvk7d.mongodb.net/test?retryWrites=true&w=majority",
     "JWTsecret": "secretkey"
 }
